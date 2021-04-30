@@ -49,9 +49,9 @@ class ModelTester():
     def label_pass(self,batch,transform,**kwargs):
         return transform(batch, **kwargs)
 
-    def test_loop(self,batch,test_dict,**kwargs):
+    def test_loop(self,loader,test_dict,**kwargs):
 
-
+        batch = next(iter(loader()))
         sample_reduce = test_dict['sample_reduce'] or IDENTITY
         sample_xform = test_dict['sample_transform'] or SAMPLES
         label_reduce = test_dict['label_reduce'] or IDENTITY
@@ -69,8 +69,40 @@ class ModelTester():
         assert comparison(sample_out,label_out)
         logger.info("Test Passed")
 
+    def test_loop2(self,loader,test_dict,**kwargs):
+
+        sample_reduce = test_dict['sample_reduce'] or IDENTITY
+        sample_xform = test_dict['sample_transform'] or SAMPLES
+        label_reduce = test_dict['label_reduce'] or IDENTITY
+        label_xform = test_dict['label_transform'] or LABELS
+        comparison = test_dict['comparison'] or (lambda x,y: x==y)
+
+        sample_out = None
+        label_out = None
+        for batch in loader():
+
+            sample_pass_result = sample_reduce(self.sample_pass(batch,sample_xform,alternateForward=test_dict['forward'],**kwargs))
+            label_pass_result = label_reduce(self.label_pass(batch,label_xform, **kwargs))
+
+            if sample_out is None:
+                sample_out = sample_pass_result
+            else:
+                sample_out = torch.cat((sample_out,sample_pass_result))
+
+            if label_out is None:
+                label_out = label_pass_result
+            else:
+                label_out = torch.cat((label_out,label_pass_result))
+
+        logger.info("Test: " + test_dict['name'] or "unnamed")
+        logger.info("Sample Output: " + str(sample_out))
+        logger.info("Label Output: " + str(label_out))
+        assert comparison(sample_out,label_out)
+        logger.info("Test Passed")
+
     def test(self):
-        batch = next(iter(self.test_dataloader()))
+        #batch = next(iter(self.test_dataloader()))
 
         for t in self.tests:
-            self.test_loop(batch,t)
+            loader = t['dataloader'] or self.test_dataloader
+            self.test_loop2(loader,t)
