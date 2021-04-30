@@ -39,7 +39,83 @@ def accuracy_threshold(thresh):
         return accuracy(sample_out,label_out) > thresh
     return compare
 
-def influence_transform(model,verbose=True): # it actually probably needs the ModelTester object, because it needs the loaders
+
+def calc_gradients(model,Loader):
+    model.eval()
+    params = [p for name,p in model.named_parameters()]
+    gradients = []
+    train_labels = []
+    train_samples = []
+
+    tl = Loader()
+    for t_samp, t_lab in tl:
+        for s, l in zip(t_samp, t_lab):
+            train_labels.append(l)
+            train_samples.append(s)
+            loss = model.validation_step((s.unsqueeze(0),l.unsqueeze(0)),-1)
+            grad_train = params2vec(torch.autograd.grad(loss,params,retain_graph=False))
+            #train_g = grad_train / torch.linalg.norm(grad_train)
+            gradients.append(grad_train)
+            #I_c.append(np.dot(-test_g.detach(),train_g.detach()))
+
+    return gradients, train_samples, train_labels
+
+def gradientCosine(grad_test, grad_train):
+    test_g = grad_test / torch.linalg.norm(grad_test)
+    train_g = grad_train / torch.linalg.norm(grad_train)
+    return np.dot(-test_g.detach(),train_g.detach())
+
+def influence_transform(model,trainLoader,slice=0,verbose=True): # it actually probably needs the ModelTester object, because it needs the loaders
+
+    def transform(batch):
+
+        # calculate the gradients for each training point first
+        train_gradients, train_samples, train_labels = calc_gradients(model,trainLoader)
+
+        test_gradients, test_samples, test_labels = calc_gradients(model,lambda :[batch])
+
+        closest_points = []
+
+
+        for grad_test, samp, lab in zip(test_gradients, test_samples, test_labels):
+
+            #I_c = []
+            #logger.info(f"sample shape is {samp.shape}")
+            pred = model(samp.unsqueeze(0))
+            test_g = grad_test / torch.linalg.norm(grad_test)
+
+            I_c = [gradientCosine(grad_test, grad_train) for grad_train in train_gradients]
+            #for grad_train, s, l in zip(train_gradients, train_samples, train_labels):
+
+            #    I_c.append(gradientCosin(grad_test, grad_train))
+
+            # log the label, the prediction, the confidence, and the influential image
+
+            label_prob = pred.squeeze().detach().numpy()[lab] # what dimension is this?
+            #logger.info(str(label_prob))
+            inf_id = np.argsort(I_c)[slice]
+            inf_label = int(train_labels[inf_id])
+            inf_sample = train_samples[inf_id].numpy()
+            sample_dict = {"true_label":int(lab),
+                           "sample":arrayToBase64IM(samp),
+                           "confidence":str(label_prob),
+                           "closest_label":inf_label,
+                           "closest_sample":arrayToBase64IM(inf_sample)}
+
+            #for r in sample_dict.keys():
+            #    logger.info(r+ " " + str(type(sample_dict[r])))
+
+            verbose and logger.info(json.dumps(sample_dict))
+            #logger.info("Some INFO!!")
+
+            closest_points.append(inf_label)
+
+        return torch.IntTensor(closest_points)
+
+    return transform
+
+
+def influence_transform_old(model,verbose=True): # it actually probably needs the ModelTester object, because it needs the loaders
     def transform(batch):
 
         closest_points = []
