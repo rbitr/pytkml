@@ -18,13 +18,7 @@ from pathlib import Path
 from pytkml.core.processors import IDENTITY, SAMPLES, LABELS
 from pytkml.misc.logging import arrayToBase64IM
 
-#class TestArgs:
-#
-#    def __init__(self,name=""):
-#        self.name = name
-#
-#    def __getattr__(self, item):
-#            return None
+
 def test_args_dict(**init_dict):
     return defaultdict(lambda: None,**init_dict)
 
@@ -79,6 +73,8 @@ class ModelTester():
 
         sample_out = None
         label_out = None
+
+        logger.info("Test: " + test_dict['name'] or "unnamed")
         for batch in loader():
 
             sample_pass_result = sample_reduce(self.sample_pass(batch,sample_xform,alternateForward=test_dict['forward'],**kwargs))
@@ -94,15 +90,24 @@ class ModelTester():
             else:
                 label_out = torch.cat((label_out,label_pass_result))
 
-        logger.info("Test: " + test_dict['name'] or "unnamed")
+
         logger.info("Sample Output: " + str(sample_out))
         logger.info("Label Output: " + str(label_out))
         assert comparison(sample_out,label_out)
-        logger.info("Test Passed")
+
 
     def test(self):
         #batch = next(iter(self.test_dataloader()))
-
+        num_tests = len(self.tests)
+        passed_tests = 0
         for t in self.tests:
             loader = t['dataloader'] or self.test_dataloader
-            self.test_loop2(loader,t)
+            try:
+                self.test_loop2(loader,t)
+                logger.info("Test Passed")
+                passed_tests += 1
+            except AssertionError:
+                logger.info(f"Test Failed, Comparison {t['comparison'] or 'equality'}")
+
+
+        logger.info(f"Passed {passed_tests}/{num_tests} tests")
