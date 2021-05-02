@@ -45,9 +45,9 @@ def accuracy_threshold(thresh):
     return compare
 
 
-def calc_gradients(model,Loader):
-    model.eval()
-    params = [p for name,p in model.named_parameters()]
+def calc_gradients(loss_func,params,Loader):
+    #model.eval()
+
     gradients = []
     train_labels = []
     train_samples = []
@@ -57,7 +57,7 @@ def calc_gradients(model,Loader):
         for s, l in zip(t_samp, t_lab):
             train_labels.append(l)
             train_samples.append(s)
-            loss = model.validation_step((s.unsqueeze(0),l.unsqueeze(0)),-1)
+            loss = loss_func((s.unsqueeze(0),l.unsqueeze(0)))
             grad_train = params2vec(torch.autograd.grad(loss,params,retain_graph=False))
             #train_g = grad_train / torch.linalg.norm(grad_train)
             gradients.append(grad_train)
@@ -70,14 +70,28 @@ def gradientCosine(grad_test, grad_train):
     train_g = grad_train / torch.linalg.norm(grad_train)
     return np.dot(-test_g.detach(),train_g.detach())
 
-def influence_transform(model,trainLoader,slice=0,verbose=True): # it actually probably needs the ModelTester object, because it needs the loaders
+def influence_transform(model,trainLoader,slice=0,criterion=None,verbose=True): # it actually probably needs the ModelTester object, because it needs the loaders
 
     def transform(batch):
-
+        model.eval()
         # calculate the gradients for each training point first
-        train_gradients, train_samples, train_labels = calc_gradients(model,trainLoader)
+        if hasattr(model,'test_step'):
+            loss_func = lambda x: model.test_step(x,-1) # requires a batch and an ID
+            logger.info("Using loss from model test step")
+        else:
+            def loss_func(batch):
+                samples, labels = batch
+                outputs = model(samples)
+                loss = criterion(outputs, labels)
+                return loss
+            logger.info("Using user supplied loss criteria")
+            #raise NotImplementedError
 
-        test_gradients, test_samples, test_labels = calc_gradients(model,lambda :[batch])
+        params = [p for name,p in model.named_parameters()]
+
+        train_gradients, train_samples, train_labels = calc_gradients(loss_func,params,trainLoader)
+
+        test_gradients, test_samples, test_labels = calc_gradients(loss_func,params,lambda :[batch])
 
         closest_points = []
 
