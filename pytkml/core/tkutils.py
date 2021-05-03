@@ -46,8 +46,8 @@ class ModelTester():
     def __init__(self,model=None,test_dataloader=None,train_dataloader=None,val_dataloader=None,logdir="./logs"):
         self.model = model
         self.test_dataloader = test_dataloader or model.test_dataloader
-        self.train_dataloader = train_dataloader or model.train_dataloader
-        self.val_dataloader = val_dataloader or model.val_dataloader
+        #self.train_dataloader = train_dataloader or model.train_dataloader
+        #self.val_dataloader = val_dataloader or model.val_dataloader
 
         self.tests = []
 

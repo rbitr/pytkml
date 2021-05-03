@@ -6,13 +6,25 @@ import json
 from json.decoder import JSONDecodeError
 
 from typing import List
+import torch
+import numpy as np
 
+
+#helper
+clamp = np.vectorize(lambda x: min(max(x,0.),1.))
 
 # helper
 def arrayToBase64IM(samp):
 
     handle = io.BytesIO()
-    plt.imsave(handle,samp.squeeze(0))
+    channels = samp.shape[0]
+    if channels == 1:
+        plt.imsave(handle,samp.squeeze(0))
+    elif channels == 3:
+        plt.imsave(handle,clamp(torch.Tensor(samp).permute([1,2,0]))) # :(
+    else:
+        raise NotImplementedError
+
     handle.seek(0)
     image_encoded = base64.b64encode(handle.read())
 
@@ -32,6 +44,8 @@ def get_entries(lines: List[str]):
 
     print(f"got {len(entries)} json entries")
     return entries
+
+
 
 def renderLogAsHTML(logfile):
     """Returns html displaying images from logfile
@@ -55,7 +69,7 @@ def renderLogAsHTML(logfile):
 
     for entry in influence_entries:
         html_string = f"""
-        <p>Test sample with label {entry["true_label"]}, preducted as {entry["pred_label"]}.
+        <p>Test sample with label {entry["true_label"]}, predicted as {entry["pred_label"]}.
         Confidence in true label is {entry["confidence"]}</p>
         <div><img width=100 src="data:image/png;charset=utf-8;base64, {entry["sample"]}" /></div>
         <hr>

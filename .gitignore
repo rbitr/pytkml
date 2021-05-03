@@ -3,6 +3,7 @@ MNIST/
 tests/
 lightning_logs/
 logs/
+metal_nut/
 
 #Byte-compiled / optimized / DLL files
 __pycache__/

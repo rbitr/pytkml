@@ -74,7 +74,7 @@ def gradientCosine(grad_test, grad_train):
     train_g = grad_train / torch.linalg.norm(grad_train)
     return np.dot(-test_g.detach(),train_g.detach())
 
-def influence_transform(model,trainLoader,slice=0,criterion=None,verbose=True):
+def influence_transform(model,trainLoader,slice=0,criterion=None,verbose=True,inv=None):
     """Influential examples in training set to test batch
 
     Returns the slice of samples from the training set ranked
@@ -139,14 +139,25 @@ def influence_transform(model,trainLoader,slice=0,criterion=None,verbose=True):
                 #print(f"inf_ids is {inf_ids}, type is {type(inf_ids)}")
                 inf_ids = [inf_ids]
 
+            #assert 0==1
+            logger.info("Inf Ids: " + str(inf_ids))
+            logger.info("Sample Shape: " + str(train_samples[inf_ids[0]].shape))
+
             inf_labels = [int(train_labels[inf_id]) for inf_id in inf_ids]
-            inf_samples = [arrayToBase64IM(train_samples[inf_id].numpy()) for inf_id in inf_ids]
+            inf_samples = [(train_samples[inf_id]) for inf_id in inf_ids]
+            _samp = samp
+
+            if inv is not None:
+                _samp = inv(samp)
+                inf_samples = [inv(s) for s in inf_samples]
+
+            _inf_samples = [arrayToBase64IM(s) for s in inf_samples]
             sample_dict = {"true_label":int(lab),
                            "pred_label":int(np.argmax(pred_np)),
-                           "sample":arrayToBase64IM(samp),
+                           "sample":arrayToBase64IM(_samp),
                            "confidence":str(label_prob),
                            "closest_label":inf_labels,
-                           "closest_sample":inf_samples}
+                           "closest_sample":_inf_samples}
 
             #for r in sample_dict.keys():
             #    logger.info(r+ " " + str(type(sample_dict[r])))
