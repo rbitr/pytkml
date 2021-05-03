@@ -16,6 +16,8 @@ from loguru import logger
 
 from pathlib import Path
 from pytkml.core.processors import IDENTITY, SAMPLES, LABELS
+from pytkml.core.processors import influence_transform as _influence_transform
+
 from pytkml.misc.logging import arrayToBase64IM
 
 
@@ -23,6 +25,23 @@ def test_args_dict(**init_dict):
     return defaultdict(lambda: None,**init_dict)
 
 class ModelTester():
+    """Class combining model and test specifications
+
+    Each test consists of a sample pathway and label pathway, and a comparison.
+    Each pathway has a processing pass, and a reducer. The processing pass
+    transforms the sample / label, e.g. by running the sample through the model.
+    The reducer can be used to combine or standardize pass output for comparison,
+    and the comparison returns True or False depending on the relationship
+    between the reduced sample and label info.
+
+    Current default behavior is to create a logfile with time stamp at instantiation
+    in the logir directory
+
+    Attributes:
+        tests: a test_args_dict containing the spec for each test
+        model: the torch.nn.Module to be tested
+        test_dataloader: torch.utils.data.DataLoader providing the test dataset
+    """
 
     def __init__(self,model=None,test_dataloader=None,train_dataloader=None,val_dataloader=None,logdir="./logs"):
         self.model = model
@@ -111,3 +130,7 @@ class ModelTester():
 
 
         logger.info(f"Passed {passed_tests}/{num_tests} tests")
+
+    def influence_transform(self,trainLoader,slice=0,criterion=None,verbose=True): # it actually probably needs the ModelTester object, because it needs the loaders
+
+        return _influence_transform(self.model,trainLoader,slice,criterion,verbose)

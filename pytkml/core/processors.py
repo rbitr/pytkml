@@ -1,3 +1,9 @@
+"""Collection of fuctions for processing batches.
+
+Those requiring access to ModelTester internals need to be wrapped in
+the ModelTester class
+
+"""
 import os
 
 import torch
@@ -25,7 +31,7 @@ LABELS = lambda x: x[1]
 SAMPLES = lambda x: x[0]
 IDENTITY = lambda x: x
 
-# Reducers for converting output probabilities to a single value
+
 def first_element_reducer(x):
     return torch.Tensor([x[0] for x in x])
 
@@ -35,7 +41,6 @@ def first_element_reducerInt(x):
 def argmax_reducer(x):
     return torch.argmax(x,dim=1)
 
-# tess for equality
 def element_wise_equal(sample_out,label_out):
     return torch.all(torch.eq(sample_out,label_out))
 
@@ -44,9 +49,8 @@ def accuracy_threshold(thresh):
         return accuracy(sample_out,label_out) > thresh
     return compare
 
-
+# helper function
 def calc_gradients(loss_func,params,Loader):
-    #model.eval()
 
     gradients = []
     train_labels = []
@@ -59,18 +63,36 @@ def calc_gradients(loss_func,params,Loader):
             train_samples.append(s)
             loss = loss_func((s.unsqueeze(0),l.unsqueeze(0)))
             grad_train = params2vec(torch.autograd.grad(loss,params,retain_graph=False))
-            #train_g = grad_train / torch.linalg.norm(grad_train)
             gradients.append(grad_train)
-            #I_c.append(np.dot(-test_g.detach(),train_g.detach()))
+
 
     return gradients, train_samples, train_labels
 
+# helper function
 def gradientCosine(grad_test, grad_train):
     test_g = grad_test / torch.linalg.norm(grad_test)
     train_g = grad_train / torch.linalg.norm(grad_train)
     return np.dot(-test_g.detach(),train_g.detach())
 
-def influence_transform(model,trainLoader,slice=0,criterion=None,verbose=True): # it actually probably needs the ModelTester object, because it needs the loaders
+def influence_transform(model,trainLoader,slice=0,criterion=None,verbose=True):
+    """Influential examples in training set to test batch
+
+    Returns the slice of samples from the training set ranked
+    in terms of cosine of angle between the gradients with each point in the
+    test batch.
+
+    If verbose is set, logs the test sample and found samples as
+    base64 encoded png files
+
+    Args:
+        model:
+        trainLoader: the set of training points for comparison
+        slice: slice of the ranked samples to return, e.g. 0 returns the most
+        similar, -1 returns the most opposing, slice(0,3) returns the top 3
+        criterion: loss function. If None, it is assumed that the model has a
+        test_step  (as in a Pytorch LightningModule that calculated the loss)
+
+    """
 
     def transform(batch):
         model.eval()

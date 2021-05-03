@@ -8,7 +8,7 @@ from json.decoder import JSONDecodeError
 from typing import List
 
 
-
+# helper
 def arrayToBase64IM(samp):
 
     handle = io.BytesIO()
@@ -18,6 +18,7 @@ def arrayToBase64IM(samp):
 
     return image_encoded.decode('utf-8')
 
+#helper
 def get_entries(lines: List[str]):
 
     entries = []
@@ -33,8 +34,10 @@ def get_entries(lines: List[str]):
     return entries
 
 def renderLogAsHTML(logfile):
-    #load it, parse out lines with matching json
-    #return the html
+    """Returns html displaying images from logfile
+
+    Currently looks for lines generated from processors.influence_transform
+    """
 
     IF_PATTERN = {"true_label",
                   "pred_label",
