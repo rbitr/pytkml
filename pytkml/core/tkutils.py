@@ -131,6 +131,6 @@ class ModelTester():
 
         logger.info(f"Passed {passed_tests}/{num_tests} tests")
 
-    def influence_transform(self,trainLoader,slice=0,criterion=None,verbose=True): # it actually probably needs the ModelTester object, because it needs the loaders
+    def influence_transform(self,trainLoader,slice=0,criterion=None,verbose=True,inv=None): # it actually probably needs the ModelTester object, because it needs the loaders
 
-        return _influence_transform(self.model,trainLoader,slice,criterion,verbose)
+        return _influence_transform(self.model,trainLoader,slice,criterion,verbose,inv)
