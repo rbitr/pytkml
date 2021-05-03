@@ -7,7 +7,7 @@ The idea is to be able to write a set of tests you want your model to pass. The 
 
 The figure below shows how the tests work.
 
-[](test_flow_m.png)!
+![](test_flow_m.png)
 
 A ModelTester combines a model (currently PyTorch classifiers) with test data and tests. For each test, batches of data are processed on parallel pathways considering the sample and label. After processing, these are compared, and a `True` comparison corresponds to a passed test.
 
