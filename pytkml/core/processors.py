@@ -49,6 +49,15 @@ def accuracy_threshold(thresh):
         return accuracy(sample_out,label_out) > thresh
     return compare
 
+def invertImagenet():
+    # %%
+    invTrans = transforms.Compose([ transforms.Normalize(mean = [ 0., 0., 0. ],
+                                                         std = [ 1/0.229, 1/0.224, 1/0.225 ]),
+                                    transforms.Normalize(mean = [ -0.485, -0.456, -0.406 ],
+                                                         std = [ 1., 1., 1. ]),
+                                   ])
+    return invTrans
+
 # helper function
 def calc_gradients(loss_func,params,Loader):
 
