@@ -15,9 +15,9 @@ There is currently one nontrivial test. Trivial tests like accuracy are also pos
 
 The above idea can be rolled into a test, where we compare the actual classes with the influential classes for a set of data, to provide evidence that the model is working how we expect. The current implementation performs these tests, and saves the results in a log which can be recalled and visualized. The plan is to add more such tests. 
 
-[Colab Example](https://colab.research.google.com/drive/1auylRHGuWIR9cZiP92eCLj5QWtj6EjQr?usp=sharing)
+[Colab Example (MNIST)](https://colab.research.google.com/drive/1auylRHGuWIR9cZiP92eCLj5QWtj6EjQr?usp=sharing)
 
-[Second Colab Example](https://colab.research.google.com/drive/1fb3mrLRNUspaWdKzkniGY4W1jUFs7dZP?usp=sharing)
+[Second Colab Example (MVTEC)](https://colab.research.google.com/drive/1fb3mrLRNUspaWdKzkniGY4W1jUFs7dZP?usp=sharing)
 
 [1] Hanawa et al., https://arxiv.org/abs/2006.04528
 
